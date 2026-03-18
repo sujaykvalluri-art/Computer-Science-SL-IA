@@ -205,7 +205,11 @@
     <div class="card">
       <h3>Add Holding</h3>
       <div class="form-row">
-        <div class="f"><label>Ticker</label><input id="h-tick" placeholder="AAPL" style="text-transform:uppercase"/></div>
+        <div class="f" style="position:relative;">
+  <label>Ticker</label>
+  <input id="h-tick" placeholder="Search company or ticker..." oninput="searchTicker(this.value)" autocomplete="off"/>
+  <div id="ticker-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #ddd;border-radius:5px;z-index:99;max-height:200px;overflow-y:auto;box-shadow:0 4px 8px rgba(0,0,0,0.1);"></div>
+</div>
         <div class="f"><label>Shares</label><input type="number" id="h-shr" placeholder="10" step="any" min="0"/></div>
         <div class="f"><label>Avg Buy ($)</label><input type="number" id="h-avg" placeholder="150.00" step="any" min="0"/></div>
         <button class="add-btn" onclick="addHolding()">Add</button>
