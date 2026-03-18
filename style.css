@@ -7,7 +7,6 @@ body {
   color: #333;
 }
 
-/* ---- AUTH ---- */
 #auth-page {
   display: flex;
   justify-content: center;
@@ -128,4 +127,22 @@ tr:hover td { background: #fafafa; }
   position: fixed; bottom: 20px; right: 20px;
   background: #333; color: white; padding: 10px 16px;
   border-radius: 6px; font-size: 13px; display: none; z-index: 99;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 600px) {
+  nav { flex-wrap:wrap; height:auto; padding:8px 12px; gap:4px; }
+  nav .title { width:100%; margin-bottom:4px; }
+  nav .spacer { display:none; }
+  nav span#nav-user { display:none; }
+  .stats-bar { flex-wrap:wrap; }
+  .stat { flex:1 1 50%; border-right:none; border-bottom:1px solid #ddd; }
+  .form-row { flex-direction:column; }
+  .form-row .f { min-width:100%; }
+  .charts-row { grid-template-columns:1fr; }
+  .tbl-wrap { font-size:11px; }
+  th, td { padding:6px 8px; }
+  .val { font-size:15px; }
 }
