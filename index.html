@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Portfolio Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      font-size: 14px;
+      color: #333;
+    }
+
+    #auth-page {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .box {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 32px 28px;
+      width: 340px;
+    }
+
+    .box h2 { margin-bottom: 18px; font-size: 18px; text-align: center; }
+
+    .tab-row { display: flex; margin-bottom: 18px; }
+    .tab-row button {
+      flex: 1; padding: 8px; border: 1px solid #ddd;
+      background: #f5f5f5; cursor: pointer; font-size: 13px; font-weight: bold; color: #888;
+    }
+    .tab-row button:first-child { border-radius: 6px 0 0 6px; }
+    .tab-row button:last-child  { border-radius: 0 6px 6px 0; }
+    .tab-row button.active { background: white; color: #333; }
+
+    label { display: block; font-size: 12px; font-weight: bold; color: #666; margin-bottom: 3px; }
+
+    input, select {
+      width: 100%; padding: 8px 10px; border: 1px solid #ccc;
+      border-radius: 5px; font-size: 13px; margin-bottom: 10px;
+    }
+    input:focus, select:focus { outline: none; border-color: #4caf50; }
+
+    .btn-green {
+      width: 100%; padding: 9px; background: #4caf50; color: white;
+      border: none; border-radius: 5px; font-size: 14px; font-weight: bold; cursor: pointer;
+    }
+    .btn-green:hover { background: #43a047; }
+
+    .err {
+      background: #fdecea; border: 1px solid #f5c6c6;
+      color: #c62828; padding: 7px 10px; border-radius: 5px;
+      font-size: 12px; margin-bottom: 8px; display: none;
+    }
+
+    #dash-page { display: none; }
+
+    nav {
+      display: flex; align-items: center; gap: 6px;
+      background: white; border-bottom: 1px solid #ddd;
+      padding: 0 20px; height: 50px;
+    }
+    nav .title { font-weight: bold; font-size: 15px; margin-right: 10px; }
+    nav button {
+      padding: 5px 12px; border: none; border-radius: 5px;
+      background: none; font-size: 13px; font-weight: bold; color: #888; cursor: pointer;
+    }
+    nav button:hover { background: #f0f0f0; }
+    nav button.active { background: #e8f5e9; color: #2e7d32; }
+    nav .spacer { flex: 1; }
+    nav span { font-size: 13px; color: #888; }
+    nav .logout-btn {
+      padding: 5px 12px; border: 1px solid #ddd; border-radius: 5px;
+      background: white; font-size: 13px; cursor: pointer; color: #666;
+    }
+    nav .logout-btn:hover { border-color: #e53935; color: #e53935; }
+
+    .stats-bar { display: flex; background: white; border-bottom: 1px solid #ddd; }
+    .stat { flex: 1; padding: 12px 20px; border-right: 1px solid #ddd; }
+    .stat:last-child { border-right: none; }
+    .lbl { font-size: 11px; font-weight: bold; color: #aaa; text-transform: uppercase; }
+    .val { font-size: 18px; font-weight: bold; color: #333; margin-top: 2px; }
+    .green { color: #4caf50 !important; }
+    .red   { color: #e53935 !important; }
+
+    .page { padding: 20px; display: none; }
+    .page.active { display: block; }
+
+    .card {
+      background: white; border: 1px solid #ddd;
+      border-radius: 8px; padding: 18px 20px; margin-bottom: 16px;
+    }
+    .card h3 { font-size: 15px; margin-bottom: 14px; }
+
+    .live-badge {
+      display: inline-block; font-size: 10px; font-weight: bold;
+      background: #e8f5e9; color: #2e7d32; padding: 2px 6px;
+      border-radius: 4px; margin-left: 6px; vertical-align: middle;
+    }
+
+    .form-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+    .form-row .f { display: flex; flex-direction: column; flex: 1; min-width: 100px; }
+    .form-row .f input, .form-row .f select { margin-bottom: 0; }
+    .add-btn {
+      padding: 8px 16px; background: #4caf50; color: white;
+      border: none; border-radius: 5px; font-weight: bold; cursor: pointer; align-self: flex-end;
+    }
+    .add-btn:hover { background: #43a047; }
+
+    .tbl-wrap { overflow-x: auto; border: 1px solid #ddd; border-radius: 5px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th {
+      background: #f5f5f5; padding: 9px 12px; text-align: left;
+      font-size: 11px; font-weight: bold; text-transform: uppercase;
+      color: #999; border-bottom: 1px solid #ddd;
+    }
+    td { padding: 9px 12px; border-bottom: 1px solid #eee; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+    .tick { font-weight: bold; color: #1565c0; }
+    .empty td { text-align: center; color: #aaa; font-style: italic; padding: 24px; }
+    .del-btn {
+      padding: 3px 9px; border: 1px solid #ddd; border-radius: 4px;
+      background: none; font-size: 11px; color: #999; cursor: pointer;
+    }
+    .del-btn:hover { border-color: #e53935; color: #e53935; }
+
+    .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .chart-box { height: 250px; position: relative; }
+
+    #toast {
+      position: fixed; bottom: 20px; right: 20px;
+      background: #333; color: white; padding: 10px 16px;
+      border-radius: 6px; font-size: 13px; display: none; z-index: 99;
+    }
+  </style>
+</head>
+<body>
+
+<!-- AUTH PAGE -->
+<div id="auth-page">
+  <div class="box">
+    <h2>Portfolio Tracker</h2>
+    <div class="tab-row">
+      <button class="active" id="t-login"  onclick="switchTab('login')">Login</button>
+      <button               id="t-signup" onclick="switchTab('signup')">Sign Up</button>
+    </div>
+
+    <div id="login-form">
+      <label>Username</label>
+      <input type="text"     id="l-user" placeholder="username" />
+      <label>Password</label>
+      <input type="password" id="l-pass" placeholder="password" />
+      <div class="err" id="l-err"></div>
+      <button class="btn-green" onclick="doLogin()">Log In</button>
+    </div>
+
+    <div id="signup-form" style="display:none">
+      <label>Username</label>
+      <input type="text"     id="s-user"  placeholder="username" />
+      <label>Email</label>
+      <input type="email"    id="s-email" placeholder="email" />
+      <label>Password</label>
+      <input type="password" id="s-pass"  placeholder="min 8 characters" />
+      <div class="err" id="s-err"></div>
+      <button class="btn-green" onclick="doSignup()">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD PAGE -->
+<div id="dash-page">
+
+  <nav>
+    <span class="title">Portfolio Tracker</span>
+    <button id="n-holdings"     class="active" onclick="goTo('holdings')">Holdings</button>
+    <button id="n-transactions" onclick="goTo('transactions')">Transactions</button>
+    <button id="n-analytics" onclick="goTo('analytics')">Analytics</button>
+    <button id="n-compare" onclick="goTo('compare')">Compare</button>
+    <button id="n-alerts" onclick="goTo('alerts')">Alerts</button>
+    <div class="spacer"></div>
+    <span id="nav-user"></span>
+    <button class="logout-btn" onclick="doLogout()">Logout</button>
+  </nav>
+
+
+  
+  <div class="stats-bar">
+    <div class="stat"><div class="lbl">Total Value</div><div class="val" id="s-total">$0.00</div></div>
+    <div class="stat"><div class="lbl">Cost Basis</div><div class="val" id="s-cost">$0.00</div></div>
+    <div class="stat"><div class="lbl">Gain / Loss</div><div class="val" id="s-gain">$0.00</div></div>
+    <div class="stat"><div class="lbl">Return %</div><div class="val" id="s-pct">0.00%</div></div>
+  </div>
+
+  <!-- Holdings -->
+  <div class="page active" id="p-holdings">
+    <div class="card">
+      <h3>Add Holding</h3>
+      <div class="form-row">
+        <div class="f"><label>Ticker</label><input id="h-tick" placeholder="AAPL" style="text-transform:uppercase"/></div>
+        <div class="f"><label>Shares</label><input type="number" id="h-shr" placeholder="10" step="any" min="0"/></div>
+        <div class="f"><label>Avg Buy ($)</label><input type="number" id="h-avg" placeholder="150.00" step="any" min="0"/></div>
+        <button class="add-btn" onclick="addHolding()">Add</button>
+      </div>
+      <div class="err" id="h-err" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <h3>Your Holdings</h3>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+  <button class="add-btn" onclick="exportCSV()" style="background:#1565c0;">Export CSV</button>
+</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Ticker</th>
+              <th>Shares</th>
+              <th>Avg Price</th>
+              <th>Live Price <span class="live-badge">LIVE</span></th>
+              <th>Cost</th>
+              <th>Value</th>
+              <th>Gain / Loss</th>
+              <th>Return</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="h-body">
+            <tr class="empty"><td colspan="9">No holdings yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transactions -->
+  <div class="page" id="p-transactions">
+    <div class="card">
+      <h3>Log Transaction</h3>
+      <div class="form-row">
+        <div class="f"><label>Type</label><select id="t-type"><option value="BUY">BUY</option><option value="SELL">SELL</option></select></div>
+        <div class="f"><label>Ticker</label><input id="t-tick" placeholder="TSLA" style="text-transform:uppercase"/></div>
+        <div class="f"><label>Shares</label><input type="number" id="t-shr" placeholder="5" step="any" min="0"/></div>
+        <div class="f"><label>Price ($)</label><input type="number" id="t-prc" placeholder="200" step="any" min="0"/></div>
+        <button class="add-btn" onclick="addTransaction()">Log</button>
+      </div>
+      <div class="err" id="t-err" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <h3>Transaction History</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Ticker</th>
+              <th>Shares</th>
+              <th>Price</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="t-body">
+            <tr class="empty"><td colspan="6">No transactions yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analytics -->
+  <div class="page" id="p-analytics">
+    <div class="charts-row">
+      <div class="card"><h3>Allocation</h3><div class="chart-box"><canvas id="c-alloc"></canvas></div></div>
+      <div class="card"><h3>Gain / Loss per Stock</h3><div class="chart-box"><canvas id="c-perf"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- Compare / Snapshots -->
+  <div class="page" id="p-compare">
+    <div class="card">
+      <h3>Portfolio Snapshots</h3>
+      <p style="color:#888;margin-bottom:12px">Save a snapshot of your current live portfolio value to track growth over time.</p>
+      <button class="add-btn" onclick="saveSnapshot()">Save Snapshot</button>
+      <div id="snap-msg" style="display:none;margin-top:10px;padding:8px 12px;background:#e8f5e9;border-radius:5px;color:#2e7d32;font-weight:bold"></div>
+    </div>
+    <div class="card">
+      <h3>Snapshot History</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Value</th>
+              <th>Change</th>
+            </tr>
+          </thead>
+          <tbody id="snap-body">
+            <tr class="empty"><td colspan="3">No snapshots yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Alerts -->
+  <div class="page" id="p-alerts">
+    <div class="card">
+      <h3>Set Price Alert</h3>
+      <div class="form-row">
+        <div class="f"><label>Ticker</label><input id="alert-tick" placeholder="AAPL" style="text-transform:uppercase"/></div>
+        <div class="f"><label>Condition</label>
+          <select id="alert-dir">
+            <option value="above">Goes above</option>
+            <option value="below">Goes below</option>
+          </select>
+        </div>
+        <div class="f"><label>Target Price ($)</label><input type="number" id="alert-price" placeholder="200.00" step="any" min="0"/></div>
+        <button class="add-btn" onclick="saveAlert()">Set Alert</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Active Alerts</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Ticker</th>
+              <th>Condition</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="alert-body">
+            <tr class="empty"><td colspan="4">No alerts set.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="alert-popup" style="display:none;position:fixed;top:20px;right:20px;background:#1565c0;color:white;padding:14px 18px;border-radius:8px;font-size:13px;font-weight:bold;z-index:999;max-width:320px;box-shadow:0 4px 12px rgba(0,0,0,0.2);">
+    <div style="margin-bottom:6px;">Price Alert Triggered!</div>
+    <div id="alert-popup-msg" style="font-weight:normal;font-size:12px;"></div>
+    <button onclick="document.getElementById('alert-popup').style.display='none'" style="margin-top:8px;background:rgba(255,255,255,0.2);border:none;color:white;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;">Dismiss</button>
+  </div>
+
+<div id="toast"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
+
