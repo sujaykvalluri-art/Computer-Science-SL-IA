@@ -145,7 +145,6 @@
 </head>
 <body>
 
-<!-- AUTH PAGE -->
 <div id="auth-page">
   <div class="box">
     <h2>Portfolio Tracker</h2>
@@ -176,7 +175,6 @@
   </div>
 </div>
 
-<!-- DASHBOARD PAGE -->
 <div id="dash-page">
 
   <nav>
@@ -200,7 +198,6 @@
     <div class="stat"><div class="lbl">Return %</div><div class="val" id="s-pct">0.00%</div></div>
   </div>
 
-  <!-- Holdings -->
   <div class="page active" id="p-holdings">
     <div class="card">
       <h3>Add Holding</h3>
@@ -244,7 +241,6 @@
     </div>
   </div>
 
-  <!-- Transactions -->
   <div class="page" id="p-transactions">
     <div class="card">
       <h3>Log Transaction</h3>
@@ -279,7 +275,6 @@
     </div>
   </div>
 
-  <!-- Analytics -->
   <div class="page" id="p-analytics">
     <div class="charts-row">
       <div class="card"><h3>Allocation</h3><div class="chart-box"><canvas id="c-alloc"></canvas></div></div>
@@ -287,7 +282,6 @@
     </div>
   </div>
 
-  <!-- Compare / Snapshots -->
   <div class="page" id="p-compare">
     <div class="card">
       <h3>Portfolio Snapshots</h3>
@@ -316,7 +310,6 @@
 
 </div>
 
-<!-- Alerts -->
   <div class="page" id="p-alerts">
     <div class="card">
       <h3>Set Price Alert</h3>
@@ -357,6 +350,11 @@
     <div id="alert-popup-msg" style="font-weight:normal;font-size:12px;"></div>
     <button onclick="document.getElementById('alert-popup').style.display='none'" style="margin-top:8px;background:rgba(255,255,255,0.2);border:none;color:white;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;">Dismiss</button>
   </div>
+
+<div id="loading-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.8);z-index:999;justify-content:center;align-items:center;flex-direction:column;gap:12px;">
+  <div style="width:40px;height:40px;border:4px solid #ddd;border-top:4px solid #4caf50;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+  <div style="font-size:13px;color:#666;font-weight:bold;">Fetching live prices...</div>
+</div>
 
 <div id="toast"></div>
 
