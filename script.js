@@ -91,9 +91,12 @@ function goTo(name) {
 }
 
 async function loadHoldings() {
+  var overlay = document.getElementById("loading-overlay");
+  overlay.style.display = "flex";
   var res = await db.from("holdings").select("*").eq("user_id", user.id).order("created_at");
   holdings = res.data || [];
-  await fetchLivePrices(holdings);  // ← only change is this line
+  await fetchLivePrices(holdings);
+  overlay.style.display = "none";
   showHoldings(); updateStats();
 }
 
@@ -111,6 +114,67 @@ async function fetchLivePrices(holdings) {
     }
   }
 }
+
+async function fetchLivePrices(holdings) {
+  for (var i = 0; i < holdings.length; i++) {
+    var h = holdings[i];
+    try {
+      var res  = await fetch("https://finnhub.io/api/v1/quote?symbol=" + h.ticker + "&token=" + FINNHUB_KEY);
+      var data = await res.json();
+      if (data.c && data.c > 0) {
+        h._cur = data.c;
+      }
+    } catch (e) {
+      console.log("Could not fetch price for " + h.ticker);
+    }
+  }
+}
+
+var tickerTimer;
+async function searchTicker(query) {
+  var box = document.getElementById("ticker-suggestions");
+  clearTimeout(tickerTimer);
+  if (!query || query.length < 2) { box.style.display = "none"; return; }
+  tickerTimer = setTimeout(async function() {
+    try {
+      var res  = await fetch("https://finnhub.io/api/v1/search?q=" + query + "&token=" + FINNHUB_KEY);
+      var data = await res.json();
+      if (!data.result || !data.result.length) { box.style.display = "none"; return; }
+      var html = ""; var shown = 0;
+      for (var i = 0; i < data.result.length && shown < 6; i++) {
+        var r = data.result[i];
+        if (r.type !== "Common Stock") continue;
+        html += "<div onclick=\"pickTicker('" + r.symbol + "')\" style='padding:9px 12px;cursor:pointer;border-bottom:1px solid #eee;font-size:13px;'>" +
+                "<strong>" + r.symbol + "</strong><span style='color:#888;font-size:11px;margin-left:6px;'>" + r.description + "</span></div>";
+        shown++;
+      }
+      if (!shown) { box.style.display = "none"; return; }
+      box.innerHTML = html;
+      box.style.display = "block";
+    } catch(e) { box.style.display = "none"; }
+  }, 400);
+}
+
+function pickTicker(symbol) {
+  document.getElementById("h-tick").value = symbol;
+  document.getElementById("ticker-suggestions").style.display = "none";
+}
+
+document.addEventListener("click", function(e) {
+  if (e.target.id !== "h-tick") {
+    document.getElementById("ticker-suggestions").style.display = "none";
+  }
+});
+function pickTicker(symbol) {
+  document.getElementById("h-tick").value = symbol;
+  document.getElementById("ticker-suggestions").style.display = "none";
+}
+
+document.addEventListener("click", function(e) {
+  if (e.target.id !== "h-tick") {
+    document.getElementById("ticker-suggestions").style.display = "none";
+  }
+});
 
 async function addHolding() {
   var tick = document.getElementById("h-tick").value.trim().toUpperCase();
